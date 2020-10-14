@@ -972,17 +972,44 @@ Arguments:
     py::call_guard<py::gil_scoped_release>());
 #endif
 
+#define PROCESS_GROUP_DEPRECATION_WARNING(api_method)                \
+  TORCH_WARN_ONCE(#api_method                                        \
+                  " API is being deprecated, please ping "           \
+                  "https://github.com/pytorch/pytorch/issues/46291 " \
+                  "if you see this warning")
+
   shared_ptr_class_<::c10d::ProcessGroup::Work>(module, "Work")
       .def("is_completed", &::c10d::ProcessGroup::Work::isCompleted)
-      .def("is_success", &::c10d::ProcessGroup::Work::isSuccess)
-      .def("exception", &::c10d::ProcessGroup::Work::exception)
-      .def("source_rank", &::c10d::ProcessGroup::Work::sourceRank)
+      .def(
+          "is_success",
+          [](::c10d::ProcessGroup::Work& work) -> bool {
+            PROCESS_GROUP_DEPRECATION_WARNING(ProcessGroup::Work::is_success);
+            return work.isSuccess();
+          })
+      .def(
+          "exception",
+          [](::c10d::ProcessGroup::Work& work) -> std::exception_ptr {
+            PROCESS_GROUP_DEPRECATION_WARNING(ProcessGroup::Work::exception);
+            return work.exception();
+          })
+      .def(
+          "source_rank",
+          [](::c10d::ProcessGroup::Work& work) -> int {
+            PROCESS_GROUP_DEPRECATION_WARNING(ProcessGroup::Work::source_rank);
+            return work.sourceRank();
+          })
+      .def("_source_rank", &::c10d::ProcessGroup::Work::sourceRank)
       .def(
           "result",
           [](::c10d::ProcessGroup::Work& work) -> std::vector<at::Tensor> {
             return work.result();
           })
-      .def("synchronize", &::c10d::ProcessGroup::Work::synchronize)
+      .def(
+          "synchronize",
+          [](::c10d::ProcessGroup::Work& work) -> void {
+            PROCESS_GROUP_DEPRECATION_WARNING(ProcessGroup::Work::synchronize);
+            work.synchronize();
+          })
       .def(
           "wait",
           &::c10d::ProcessGroup::Work::wait,
@@ -1117,6 +1144,8 @@ Arguments:
 
   Py_RETURN_TRUE;
 }
+
+#undef PROCESS_GROUP_DEPRECATION_WARNING
 
 } // namespace
 
